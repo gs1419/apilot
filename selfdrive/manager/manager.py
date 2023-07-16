@@ -8,6 +8,7 @@ import traceback
 from multiprocessing import Process
 from typing import List, Tuple, Union
 
+from cereal import log
 import cereal.messaging as messaging
 import selfdrive.sentry as sentry
 from common.basedir import BASEDIR
@@ -35,6 +36,8 @@ def manager_init() -> None:
 
   params = Params()
   params.clear_all(ParamKeyType.CLEAR_ON_MANAGER_START)
+  params.clear_all(ParamKeyType.CLEAR_ON_ONROAD_TRANSITION)
+  params.clear_all(ParamKeyType.CLEAR_ON_OFFROAD_TRANSITION)
 
   default_params: List[Tuple[str, Union[str, bytes]]] = [
     ("CompletedTrainingVersion", "0"),
@@ -43,6 +46,7 @@ def manager_init() -> None:
     ("HasAcceptedTerms", "0"),
     ("LanguageSetting", "main_en"),
     ("OpenpilotEnabledToggle", "1"),
+    ("LongitudinalPersonality", str(log.LongitudinalPersonality.standard)),
     ("ShowDebugUI", "0"),
     ("ShowDateTime", "1"),
     ("ShowHudMode", "4"),
@@ -75,9 +79,8 @@ def manager_init() -> None:
     ("OpkrPrebuiltOn", "0"),
     ("AutoCurveSpeedCtrlUse", "1"),
     ("AutoCurveSpeedFactor", "100"),
+    ("AutoCurveSpeedFactorIn", "10"),
     ("AutoTurnControl", "0"),
-    ("AutoTurnSpeed", "40"),
-    ("AutoTurnTimeMax", "200"),
     ("AutoLaneChangeSpeed", "30"),
     ("AutoNaviSpeedCtrl", "1"),
     ("AutoNaviSpeedCtrlStart", "22"),
@@ -102,18 +105,20 @@ def manager_init() -> None:
     ("AutoSpeedAdjustWithLeadCar", "0"),   
     ("TrafficStopAccel", "80"),     
     ("TrafficStopModelSpeed", "0"),         
+    ("TrafficStopMode", "1"),         
     ("CruiseButtonMode", "0"),      
+    ("CruiseSpeedUnit", "10"),      
     ("GapButtonMode", "0"),      
     ("InitMyDrivingMode", "3"),      
     ("MySafeModeFactor", "80"),      
     ("LiveSteerRatioApply", "100"),      
     ("MyEcoModeFactor", "80"),  
-    ("CruiseMaxVals1", "200"),
-    ("CruiseMaxVals2", "140"),
-    ("CruiseMaxVals3", "50"),
-    ("CruiseMaxVals4", "20"),
-    ("CruiseMaxVals5", "15"),
-    ("CruiseMaxVals6", "15"),
+    ("CruiseMaxVals1", "160"),
+    ("CruiseMaxVals2", "120"),
+    ("CruiseMaxVals3", "100"),
+    ("CruiseMaxVals4", "80"),
+    ("CruiseMaxVals5", "70"),
+    ("CruiseMaxVals6", "60"),
     ("PrevCruiseGap", "4"),      
     ("CruiseSpeedMin", "10"),
     ("AutoSyncCruiseSpeedMax", "120"),       
@@ -121,26 +126,26 @@ def manager_init() -> None:
     ("CustomMapbox", "0"),    
     ("LongitudinalTuningKpV", "100"),     
     ("LongitudinalTuningKiV", "200"),     
+    ("LongitudinalTuningKf", "100"),     
     ("LongitudinalActuatorDelayUpperBound", "50"),     
     ("LongitudinalActuatorDelayLowerBound", "50"),     
     ("EnableRadarTracks", "0"),      
     ("EnableAutoEngage", "0"),      
-    ("ApplyDynamicTFollow", "105"), 
-    ("ApplyDynamicTFollowApart", "95"), 
-    ("ApplyDynamicTFollowDecel", "105"), 
+    ("ApplyDynamicTFollow", "100"), 
+    ("ApplyDynamicTFollowApart", "100"), 
+    ("ApplyDynamicTFollowDecel", "100"), 
     ("SccConnectedBus2", "0"),   
-    ("TFollowRatio", "100"),
+    ("TFollowRatio", "110"),
     ("JerkUpperLowerLimit", "8"),    
     ("KeepEngage", "1"),
-    ("UseLaneLineSpeed", "80"),    
+    ("UseLaneLineSpeed", "0"),    
     ("PathOffset", "0"),  
     ("PathCostApply", "100"),
-    ("PathCostApplyLow", "100"),
     ("HapticFeedbackWhenSpeedCamera", "0"),       
+    ("MaxAngleFrames", "89"),       
     ("SoftHoldMode", "1"),       
-    ("ApplyModelDistOrder", "30"),       
-    ("TrafficStopUpdateDist", "10"),       
-    ("TrafficDetectBrightness", "100"),       
+    ("ApplyModelDistOrder", "32"),       
+    ("TrafficStopAdjustRatio", "90"),       
     ("SteeringRateCost", "700"),       
     ("LateralMotionCost", "11"),       
     ("LateralAccelCost", "0"),       
@@ -148,10 +153,15 @@ def manager_init() -> None:
     ("LateralTorqueKp", "100"),       
     ("LateralTorqueKi", "10"),       
     ("LateralTorqueKd", "0"),       
+    ("LateralTorqueKf", "100"),       
+    ("LateralTorqueCustom", "0"),       
+    ("LateralTorqueAccelFactor", "2500"),       
+    ("LateralTorqueFriction", "100"),       
     ("SteerActuatorDelay", "30"),       
     ("CruiseControlMode", "4"),
     ("CruiseOnDist", "0"),
     ("SteerRatioApply", "0"),
+    ("SteerRatioAccelApply", "0"),
     ("SteerDeltaUp", "3"),       
     ("SteerDeltaDown", "7"),       
   ]
@@ -189,6 +199,7 @@ def manager_init() -> None:
   params.put("GitBranch", get_short_branch(default=""))
   params.put("GitRemote", get_origin(default=""))
   params.put_bool("IsTestedBranch", is_tested_branch())
+  params.put_bool("IsReleaseBranch", is_release_branch())
 
   # set dongle id
   reg_res = register(show_spinner=True)

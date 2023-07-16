@@ -904,12 +904,6 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
     ET.NO_ENTRY: NoEntryAlert("LKAS Fault: Restart the Car"),
   },
 
-  EventName.brakeUnavailable: {
-    ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("Cruise Fault: Restart the Car"),
-    ET.PERMANENT: NormalPermanentAlert("Cruise Fault: Restart the car to engage"),
-    ET.NO_ENTRY: NoEntryAlert("Cruise Fault: Restart the Car"),
-  },
-
   EventName.reverseGear: {
     ET.PERMANENT: Alert(
       "Reverse\nGear",
@@ -1027,6 +1021,12 @@ EVENTS: Dict[int, Dict[str, Union[Alert, AlertCallbackType]]] = {
   },
   EventName.stopStop: {
      ET.WARNING: EngagementAlert(AudibleAlert.stopStop),
+  },
+  EventName.audioLaneChange: {
+     ET.WARNING: EngagementAlert(AudibleAlert.laneChange),
+  },
+  EventName.audioTurn: {
+     ET.WARNING: EngagementAlert(AudibleAlert.audioTurn),
   },
 
 }

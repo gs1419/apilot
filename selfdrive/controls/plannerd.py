@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os
 import numpy as np
 from cereal import car
 from common.params import Params
@@ -34,12 +35,14 @@ def plannerd_thread(sm=None, pm=None):
   CP = car.CarParams.from_bytes(params.get("CarParams", block=True))
   cloudlog.info("plannerd got CarParams: %s", CP.carName)
 
+  debug_mode = bool(int(os.getenv("DEBUG", "0")))
+
   longitudinal_planner = LongitudinalPlanner(CP)
-  lateral_planner = LateralPlanner(CP)
+  lateral_planner = LateralPlanner(CP, debug=debug_mode)
 
   if sm is None:
-    sm = messaging.SubMaster(['carControl', 'carState', 'controlsState', 'radarState', 'modelV2', 'lightSensor'],
-                             poll=['radarState', 'modelV2', 'lightSensor'], ignore_avg_freq=['radarState'])
+    sm = messaging.SubMaster(['carControl', 'carState', 'controlsState', 'radarState', 'modelV2', 'lightSensor', 'navInstruction', 'roadLimitSpeed'],
+                             poll=['radarState', 'modelV2', 'lightSensor', 'navInstruction', 'roadLimitSpeed'], ignore_avg_freq=['radarState'])
 
   if pm is None:
     pm = messaging.PubMaster(['longitudinalPlan', 'lateralPlan', 'uiPlan'])

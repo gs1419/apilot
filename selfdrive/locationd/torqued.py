@@ -7,8 +7,8 @@ from collections import deque, defaultdict
 
 import cereal.messaging as messaging
 from cereal import car, log
-from common.params import Params
-from common.realtime import config_realtime_process, DT_MDL
+from common.params import Params, put_nonblocking
+from common.realtime import Priority, config_realtime_process, DT_MDL
 from common.filter_simple import FirstOrderFilter
 from system.swaglog import cloudlog
 from selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
@@ -30,8 +30,7 @@ MIN_FILTER_DECAY = 50
 MAX_FILTER_DECAY = 250
 LAT_ACC_THRESHOLD = 1
 STEER_BUCKET_BOUNDS = [(-0.5, -0.3), (-0.3, -0.2), (-0.2, -0.1), (-0.1, 0), (0, 0.1), (0.1, 0.2), (0.2, 0.3), (0.3, 0.5)]
-#MIN_BUCKET_POINTS = np.array([100, 300, 500, 500, 500, 500, 300, 100])
-MIN_BUCKET_POINTS = np.array([5, 20, 100, 100, 100, 100, 20, 5])
+MIN_BUCKET_POINTS = np.array([100, 300, 500, 500, 500, 500, 300, 100])
 MIN_ENGAGE_BUFFER = 2  # secs
 
 VERSION = 1  # bump this to invalidate old parameter caches
@@ -298,7 +297,12 @@ def main(sm=None, pm=None):
     # 4Hz driven by liveLocationKalman
     if sm.frame % 5 == 0:
       pm.send('liveTorqueParameters', estimator.get_msg(valid=sm.all_checks()))
-
+      
+    # dp - auto save every 3 mins: 4 hz * 60 * 3 = 720 (3 mins)
+    if sm.frame % 720 == 0:
+      put_nonblocking("LiveTorqueCarParams", CP.as_builder().to_bytes())
+      msg = estimator.get_msg(with_points=True)
+      put_nonblocking("LiveTorqueParameters", msg.to_bytes())
 
 if __name__ == "__main__":
   main()

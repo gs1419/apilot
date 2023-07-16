@@ -55,9 +55,10 @@ public slots:
   void offroadTransition(bool offroad);
   void showDriverView(bool show);
   void showSidebar(bool show);
+  void showMapPanel(bool show);
 
 protected:
-  void mouseReleaseEvent(QMouseEvent* e) override;
+  void mousePressEvent(QMouseEvent* e) override;
   void mouseDoubleClickEvent(QMouseEvent* e) override;
 
 private:

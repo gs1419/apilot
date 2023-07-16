@@ -70,7 +70,7 @@ class CarInterface(CarInterfaceBase):
       ret.mass = 3982. * CV.LB_TO_KG + STD_CARGO_KG
       ret.wheelbase = 2.766
       # Values from optimizer
-      ret.steerRatio = 16.55  # 13.8 is spec end-to-end
+      ret.steerRatio = 13.8 #16.55  # 13.8 is spec end-to-end
       tire_stiffness_factor = 0.82
     elif candidate in (CAR.SONATA, CAR.SONATA_HYBRID):
       ret.mass = 1513. + STD_CARGO_KG
@@ -297,6 +297,8 @@ class CarInterface(CarInterfaceBase):
       ret.enableBsm = 0x58b in fingerprint[0]
       ret.sccBus = 2 if 1056 in fingerprint[2] else 0 if 1056 in fingerprint[0] else -1
 
+      ret.naviCluster = 1 if 1348 in fingerprint[0] else 0
+
       ret.sccBus = 0
       if Params().get_bool("SccConnectedBus2"):
         ret.sccBus = 2
@@ -396,7 +398,7 @@ class CarInterface(CarInterfaceBase):
 
     # for blinkers
     if CP.flags & HyundaiFlags.ENABLE_BLINKERS:
-      disable_ecu(logcan, sendcan, bus=CanBus(CP.ECAN), addr=0x7B1, com_cont_req=b'\x28\x83\x01')
+      disable_ecu(logcan, sendcan, bus=CanBus(CP).ECAN, addr=0x7B1, com_cont_req=b'\x28\x83\x01')
 
   def _update(self, c):
     ret = self.CS.update(self.cp, self.cp_cam)
